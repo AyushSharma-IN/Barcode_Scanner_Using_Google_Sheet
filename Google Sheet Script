@@ -1,0 +1,96 @@
+var ss = SpreadsheetApp.openByUrl("Your Google Sheet URL");
+var sheet = ss.getSheetByName("Your Google SHeet Name");
+
+function doGet(e) 
+{
+  var action = e.parameter.action;
+
+  if (action == "insert")
+      return insert(e);
+  else if (action == "delete")
+      return deleteItem(e);
+  else if (action == "read")
+      return read(e);
+}
+
+function doPost(e){
+  
+  var action = e.parameter.action;
+
+  if (action == "insert")
+      return insert(e);
+  else if (action == "delete")
+      return deleteItem(e);
+  else if (action == "read")
+      return read(e);
+}
+
+function read(e){
+  
+  var records={};
+  var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1,sheet.getLastColumn()).getValues();
+  var data = [];
+
+  for (var r = 0, l = rows.length; r < l; r++) {
+    var row     = rows[r],
+        record  = {};
+    record['id'] = row[0]
+    record['barcode'] = row[1];
+    
+    data.push(record);
+   }
+  records.items = data;
+  var result=JSON.stringify(records);
+  return ContentService.createTextOutput(result).setMimeType(ContentService.MimeType.JSON);
+}
+
+function insert(e)
+{
+  var barcode = e.parameter.barcode;
+  var flag = 1;
+  var lr = sheet.getLastRow();
+  var id = sheet.getRange(lr, 1).getValue();
+  for (var i = 1; i <= lr; i++) {
+    var id1 = sheet.getRange(i, 1).getValue();
+    if (id1 == id) {
+      flag = 0;
+      var result = "Id already exist..";
+    }
+  }
+  //add new row with recieved parameter from client
+  if (flag == 1) {
+    var d = new Date();
+    var date = d.toLocaleString();
+    var rowData = sheet.appendRow([id,barcode,date]);
+    var result = "Insertion successful";
+  }
+  result = JSON.stringify({"result": result});
+  return ContentService.createTextOutput(result).setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+function deleteItem(e) 
+{
+    var output = ContentService.createTextOutput();
+    var id = e.parameter.id;
+    var flag = 0;
+
+    var lr = sheet.getLastRow();
+    for (var i = 1; i <= lr; i++) 
+    {
+        var rid = sheet.getRange(i, 1).getValue();
+        if (rid == id)
+     	{
+          sheet.deleteRow(i);
+          var result = "Value Deleted Successfully...";
+          flag = 1;
+          break;
+        }
+    }
+
+    if (flag == 0)
+        var result = "Id Not Found!";
+
+    result = JSON.stringify({"result": result});
+
+    return ContentService.createTextOutput(result).setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
